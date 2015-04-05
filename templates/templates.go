@@ -92,7 +92,7 @@ type templateExpander struct {
 }
 
 // NewTemplateExpander returns a template expander ready to use.
-func NewTemplateExpander(text string, name string, data interface{}, timestamp clientmodel.Timestamp, storage local.Storage) *templateExpander {
+func NewTemplateExpander(text string, name string, data interface{}, timestamp clientmodel.Timestamp, storage local.Storage, pathPrefix string) *templateExpander {
 	return &templateExpander{
 		text: text,
 		name: name,
@@ -140,7 +140,7 @@ func NewTemplateExpander(text string, name string, data interface{}, timestamp c
 				return v
 			},
 			"humanize": func(v float64) string {
-				if v == 0 {
+				if v == 0 || math.IsNaN(v) || math.IsInf(v, 0) {
 					return fmt.Sprintf("%.4g", v)
 				}
 				if math.Abs(v) >= 1 {
@@ -165,7 +165,7 @@ func NewTemplateExpander(text string, name string, data interface{}, timestamp c
 				return fmt.Sprintf("%.4g%s", v, prefix)
 			},
 			"humanize1024": func(v float64) string {
-				if math.Abs(v) <= 1 {
+				if math.Abs(v) <= 1 || math.IsNaN(v) || math.IsInf(v, 0) {
 					return fmt.Sprintf("%.4g", v)
 				}
 				prefix := ""
@@ -179,6 +179,9 @@ func NewTemplateExpander(text string, name string, data interface{}, timestamp c
 				return fmt.Sprintf("%.4g%s", v, prefix)
 			},
 			"humanizeDuration": func(v float64) string {
+				if math.IsNaN(v) || math.IsInf(v, 0) {
+					return fmt.Sprintf("%.4g", v)
+				}
 				if v == 0 {
 					return fmt.Sprintf("%.4gs", v)
 				}
@@ -214,6 +217,9 @@ func NewTemplateExpander(text string, name string, data interface{}, timestamp c
 					v *= 1000
 				}
 				return fmt.Sprintf("%.4g%ss", v, prefix)
+			},
+			"pathPrefix": func() string {
+				return pathPrefix;
 			},
 		},
 	}

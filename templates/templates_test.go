@@ -14,6 +14,7 @@
 package templates
 
 import (
+	"math"
 	"testing"
 
 	clientmodel "github.com/prometheus/client_golang/model"
@@ -123,6 +124,12 @@ func TestTemplateExpansion(t *testing.T) {
 			output: "100ms:100us:123.5ms:1m 0s:1m 0s:1.234s:12.35s:",
 		},
 		{
+			// Humanize* Inf and NaN.
+			text:   "{{ range . }}{{ humanize . }}:{{ humanize1024 . }}:{{ humanizeDuration . }}:{{ end }}",
+			input:  []float64{math.Inf(1), math.Inf(-1), math.NaN()},
+			output: "+Inf:+Inf:+Inf:-Inf:-Inf:-Inf:NaN:NaN:NaN:",
+		},
+		{
 			// Title.
 			text:   "{{ \"aa bb CC\" | title }}",
 			output: "Aa Bb CC",
@@ -171,7 +178,7 @@ func TestTemplateExpansion(t *testing.T) {
 	for i, s := range scenarios {
 		var result string
 		var err error
-		expander := NewTemplateExpander(s.text, "test", s.input, time, storage)
+		expander := NewTemplateExpander(s.text, "test", s.input, time, storage, "/")
 		if s.html {
 			result, err = expander.ExpandHTML(nil)
 		} else {
